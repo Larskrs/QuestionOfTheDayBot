@@ -1,0 +1,21 @@
+{
+  "name": "ticketordereringdiscordbot",
+  "version": "1.0.0",
+  "description": "A simple dicord bot to create order",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Larskrs",
+  "license": "ISC",
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.44",
+    "@supabase/supabase-js": "^2.39.1",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  }
+}
