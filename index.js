@@ -7,7 +7,10 @@ console.log("Loading Config...")
 console.log(config)
 
 const intentFields = new IntentsBitField()
-intentFields.add(IntentsBitField.Flags.Guilds)
+intentFields.add(
+	IntentsBitField.Flags.Guilds,
+	IntentsBitField.Flags.GuildMembers,
+)
 const client = new Client({ intents: intentFields });
 
 
@@ -58,12 +61,19 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
-const eventsPath = path.join(__dirname, 'events');
+
+// When the client is ready, run this code (only once).
+// The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
+// It makes some properties non-nullable.
+
+// Log in to Discord with your client's token
+
+const eventsPath = path.join('events');
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
 for (const file of eventFiles) {
-	const filePath = path.join(eventsPath, file);
-	const event = require(filePath);
+	const filePath = path.join(eventsPath, file);																																																						
+	const event = await import("./" + filePath);
 	if (event.once) {
 		client.once(event.name, (...args) => event.execute(...args));
 	} else {
@@ -71,9 +81,5 @@ for (const file of eventFiles) {
 	}
 }
 
-// When the client is ready, run this code (only once).
-// The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
-// It makes some properties non-nullable.
 
-// Log in to Discord with your client's token
 client.login(config.token);

@@ -1,6 +1,6 @@
 
 import { setTimeout } from 'timers/promises'
-import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder, PermissionFlagsBits, UserSelectMenuBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder, PermissionFlagsBits, UserSelectMenuBuilder, ComponentType } from 'discord.js';
 import { supabase } from '../../libs/database.js';
 import config from "../../config.json" assert { type: 'json' }
 
@@ -16,13 +16,23 @@ import config from "../../config.json" assert { type: 'json' }
         // interaction.user is the object representing the User who ran the command
 		// interaction.member is the GuildMember object, which represents the user in the specific guild
         
+        const guildId = interaction.guildId
+        let guild = await client.guilds.cache.get(guildId)
+
+
         await interaction.reply ({content: "Loading available questions", ephemeral: false})
+        questionData = await supabase
+            .from("questions")
+            .select("*")
+
         const question   = await SelectQuestion(interaction)
         
         // await interaction.editReply({content: `You ordered a ${ticketType} ticket for the ${show}`, ephemeral: true })
 
         const channel = client.channels.cache.get("" + config.channels.questions);
+        const answerChannel = client.channels.cache.get("" + config.channels.answers);
 
+        await answerChannel.bulkDelete(100)
         await channel.bulkDelete(100)
         
         
@@ -37,6 +47,43 @@ import config from "../../config.json" assert { type: 'json' }
             embeds: [await QuestionEmbed(question)],
             components: [row],
         })
+        await answerChannel.send({
+            embeds: [await QuestionEmbed(question)],
+        })
+        await answerChannel.send({
+            content: `This channel is only for the answers. You can submit your answer to todays question ian the questions channel.`
+        })
+
+        const collector = message.createMessageComponentCollector({
+            componentType: ComponentType.UserSelect,
+            // filter: (i) => i.customId === message.id, 
+
+        })
+
+        collector.on('collect', async i => {
+            // if (i.user.id === interaction.user.id) {
+            
+                const user = guild.members.cache.get(i.user.id)
+                console.log(i.values)
+                let target = await guild.members.cache.get(i.values[0]);
+
+                await answerChannel.send({
+                    embeds: [await AnswerEmbed(question.format, target, user)],
+                })
+                // await setTimeout(6000);
+                // i.deleteReply()
+
+                
+
+            // } else {
+                // i.reply({ content: `These buttons aren't for you!`, ephemeral: true });
+            // }
+        });
+        
+        collector.on('end', collected => {
+            console.log(`Collected ${collected.size} interactions.`);
+        });
+
 
         // try {
         // 	const confirmation = await message.awaitMessageComponent({ time: 3_600_000 });
@@ -69,10 +116,38 @@ import config from "../../config.json" assert { type: 'json' }
          
     }
 
-    const questionData = await supabase
+    let questionData = await supabase
     .from("questions")
     .select("*")
     
+
+function GetAvatarUrl(user) {
+    return "https://cdn.discordapp.com/avatars/"+user.id+"/"+user.avatar+".jpeg"
+}
+
+async function AnswerEmbed (format, target, user) {
+    console.log("Designing answer embed")
+    const targetName = target.nickname ? target.nickname : target.user.globalName
+    const userName  = user.nickname ? user.nickname : user.user.globalName
+    // const userName = user.member.nickname ? user.member.nickname : user.globalName
+    const embed = new EmbedBuilder()
+    .setColor(config.embed.color)
+	.setAuthor({ name: userName, iconURL: GetAvatarUrl(user.user) })
+    .setThumbnail(GetAvatarUrl(target.user))
+	.setDescription(`
+        ${
+            format
+            .replaceAll('%answer%', targetName)
+            .replaceAll('%user%', userName)
+        }
+        `)
+    .addFields(
+        { name: 'Answer', value: `${userName} answered: **${targetName}**`,  },
+    )
+
+    return embed
+
+}
 
 async function QuestionEmbed (question) {
     
