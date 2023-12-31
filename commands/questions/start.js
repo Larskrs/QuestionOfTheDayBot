@@ -70,8 +70,13 @@ import config from "../../config.json" assert { type: 'json' }
                 await answerChannel.send({
                     embeds: [await AnswerEmbed(question.format, target, user)],
                 })
-                // await setTimeout(6000);
-                // i.deleteReply()
+
+                const userName  = GetName(user)
+
+
+                await i.reply({content: `<@${user.user.id}>, your answer has been submitted in: <#${answerChannel.id}> :thumbsup:`})
+                await setTimeout(6000);
+                await i.deleteReply()
 
                 
 
@@ -121,19 +126,24 @@ import config from "../../config.json" assert { type: 'json' }
     .select("*")
     
 
-function GetAvatarUrl(user) {
-    return "https://cdn.discordapp.com/avatars/"+user.id+"/"+user.avatar+".jpeg"
+function GetAvatarUrl(member) {
+    return "https://cdn.discordapp.com/avatars/"+member.user.id+"/"+member.avatar+".jpeg"
+}
+function GetName(member) {
+    if (member.nickname) { return member.nickname }
+    if (member.user.globalName) { return member.user.globalName }
+    return member.user.username 
 }
 
 async function AnswerEmbed (format, target, user) {
     console.log("Designing answer embed")
-    const targetName = target.nickname ? target.nickname : target.user.globalName
-    const userName  = user.nickname ? user.nickname : user.user.globalName
+    const targetName = GetName(target)
+    const userName  = GetName(user)
     // const userName = user.member.nickname ? user.member.nickname : user.globalName
     const embed = new EmbedBuilder()
     .setColor(config.embed.color)
-	.setAuthor({ name: userName, iconURL: GetAvatarUrl(user.user) })
-    .setThumbnail(GetAvatarUrl(target.user))
+	.setAuthor({ name: userName, iconURL: user.displayAvatarURL() })
+    .setThumbnail(target.displayAvatarURL())
 	.setDescription(`
         ${
             format
@@ -142,7 +152,7 @@ async function AnswerEmbed (format, target, user) {
         }
         `)
     .addFields(
-        { name: 'Answer', value: `${userName} answered: **${targetName}**`,  },
+        { name: 'Answer', value: `<@${user.user.id}> answered: **${targetName}**`,  },
     )
 
     return embed
