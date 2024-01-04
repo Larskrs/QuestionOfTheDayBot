@@ -45,6 +45,9 @@ import config from "../../config.json" assert { type: 'json' }
             embeds: [await QuestionEmbed(question)],
             components: [row],
         })
+        await channel.send({
+            content: `New Question TODAY! <@&${config.roles.qotd_ping}>`
+        })
         await answerChannel.send({
             content: `
         These answers are from a previous QOTD. \n New questions will be posted in <#${config.channels.questions}>
