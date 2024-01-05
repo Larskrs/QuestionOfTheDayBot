@@ -27,6 +27,7 @@ import config from "../../config.json" assert { type: 'json' }
                 questions(*)
             `)
             .order("created_at", { ascending: false})
+            .limit(10)
 
         const session   = await SelectSession(interaction)
         // await interaction.editReply({content: `You ordered a ${ticketType} ticket for the ${show}`, ephemeral: true })
